@@ -453,10 +453,11 @@ describe('createLoop', () => {
     const fake = fakeTiming();
     const updates: number[] = [];
     const renders: number[] = [];
-    const loop = createLoop(
-      { update: (dt) => updates.push(dt), render: () => renders.push(1) },
-      fake.timing,
-    );
+    const loop = createLoop({
+      update: (dt) => updates.push(dt),
+      render: () => renders.push(1),
+      timing: fake.timing,
+    });
     loop.start();
     fake.tick(16);
     fake.tick(16);
@@ -468,7 +469,7 @@ describe('createLoop', () => {
   it('dt clamps to MAX_DT_MS after a long gap', () => {
     const fake = fakeTiming();
     const updates: number[] = [];
-    const loop = createLoop({ update: (dt) => updates.push(dt), render: () => {} }, fake.timing);
+    const loop = createLoop({ update: (dt) => updates.push(dt), render: () => {}, timing: fake.timing });
     loop.start();
     fake.tick(5000);
     expect(updates[0]).toBe(MAX_DT_MS);
@@ -477,7 +478,7 @@ describe('createLoop', () => {
   it('stop cancels pending frame and halts updates', () => {
     const fake = fakeTiming();
     const updates: number[] = [];
-    const loop = createLoop({ update: (dt) => updates.push(dt), render: () => {} }, fake.timing);
+    const loop = createLoop({ update: (dt) => updates.push(dt), render: () => {}, timing: fake.timing });
     loop.start();
     fake.tick(16);
     loop.stop();
@@ -491,7 +492,7 @@ describe('createLoop', () => {
   it('double start does not double-schedule', () => {
     const fake = fakeTiming();
     const updates: number[] = [];
-    const loop = createLoop({ update: (dt) => updates.push(dt), render: () => {} }, fake.timing);
+    const loop = createLoop({ update: (dt) => updates.push(dt), render: () => {}, timing: fake.timing });
     loop.start();
     loop.start();
     fake.tick(16);
@@ -571,7 +572,9 @@ export function createLoop(options: {
     last = now;
     options.update(dt);
     options.render();
-    handle = timing.request(frame);
+    if (running) {
+      handle = timing.request(frame);
+    }
   };
 
   return {
