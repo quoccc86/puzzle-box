@@ -25,5 +25,7 @@ describe('keyToDirection', () => {
     expect(keyToDirection('Enter')).toBeNull();
     expect(keyToDirection('')).toBeNull();
     expect(keyToDirection('Escape')).toBeNull();
+    expect(keyToDirection('toString')).toBeNull();
+    expect(keyToDirection('constructor')).toBeNull();
   });
 });

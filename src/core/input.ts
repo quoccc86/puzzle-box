@@ -17,5 +17,6 @@ const KEY_MAP: Readonly<Record<string, Direction>> = {
 
 /** Map a KeyboardEvent.key value to a direction, or null if unmapped. */
 export function keyToDirection(key: string): Direction | null {
+  if (!Object.hasOwn(KEY_MAP, key)) return null;
   return KEY_MAP[key] ?? null;
 }

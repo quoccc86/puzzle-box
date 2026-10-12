@@ -26,18 +26,19 @@ export function createLoop(options: {
   const timing = options.timing ?? defaultTiming;
   let running = false;
   let handle: number | null = null;
+  let generation = 0;
   let last = 0;
 
-  const frame = (): void => {
-    if (!running) return;
+  const frame = (frameGeneration: number): void => {
+    if (!running || frameGeneration !== generation) return;
     const now = timing.now();
     // Clamp dt so a backgrounded tab does not produce a giant step.
     const dt = Math.min(Math.max(now - last, 0), MAX_DT_MS);
     last = now;
     options.update(dt);
     options.render();
-    if (running) {
-      handle = timing.request(frame);
+    if (running && frameGeneration === generation) {
+      handle = timing.request(() => frame(frameGeneration));
     }
   };
 
@@ -45,11 +46,14 @@ export function createLoop(options: {
     start(): void {
       if (running) return;
       running = true;
+      generation += 1;
       last = timing.now();
-      handle = timing.request(frame);
+      const frameGeneration = generation;
+      handle = timing.request(() => frame(frameGeneration));
     },
     stop(): void {
       running = false;
+      generation += 1;
       if (handle !== null) {
         timing.cancel(handle);
         handle = null;

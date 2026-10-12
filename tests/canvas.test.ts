@@ -103,6 +103,28 @@ describe('createLoop', () => {
     expect(updates).toHaveLength(1);
   });
 
+  it('stop() and start() inside update keeps one frame chain', () => {
+    const fake = fakeTiming();
+    let updates = 0;
+    const loop = createLoop({
+      update: () => {
+        updates += 1;
+        if (updates === 1) {
+          loop.stop();
+          loop.start();
+        }
+      },
+      render: () => {},
+      timing: fake.timing,
+    });
+    loop.start();
+    fake.tick(16);
+    expect(fake.pendingCount()).toBe(1);
+    fake.tick(16);
+    expect(updates).toBe(2);
+    expect(fake.pendingCount()).toBe(1);
+  });
+
   it('stop() from inside update leaves no pending frame', () => {
     const fake = fakeTiming();
     const updates: number[] = [];

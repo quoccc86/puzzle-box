@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 :root {
   color-scheme: light dark;
   font-family: system-ui, sans-serif;
@@ -42,7 +46,7 @@ body {
   color: #6b7280;
 }
 
-#stage {
+#stage:not([hidden]) {
   display: flex;
   justify-content: center;
   padding: 1rem 0;
