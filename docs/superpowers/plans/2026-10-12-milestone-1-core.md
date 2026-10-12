@@ -572,7 +572,9 @@ export function createLoop(options: {
     last = now;
     options.update(dt);
     options.render();
-    handle = timing.request(frame);
+    if (running) {
+      handle = timing.request(frame);
+    }
   };
 
   return {
