@@ -5,26 +5,35 @@ function fakeTiming() {
   let time = 0;
   let nextHandle = 1;
   let pending: FrameRequestCallback | null = null;
+  let count = 0;
   const canceled: number[] = [];
   return {
     timing: {
       now: () => time,
       request: (cb: FrameRequestCallback) => {
         pending = cb;
+        count += 1;
         return nextHandle++;
       },
       cancel: (handle: number) => {
         canceled.push(handle);
-        pending = null;
+        if (pending !== null) {
+          pending = null;
+          count -= 1;
+        }
       },
     },
     tick(ms: number) {
       time += ms;
       const cb = pending;
-      pending = null;
-      if (cb) cb(time);
+      if (cb) {
+        pending = null;
+        count -= 1;
+        cb(time);
+      }
     },
     hasPending: () => pending !== null,
+    pendingCount: () => count,
     canceled,
   };
 }
@@ -74,6 +83,7 @@ describe('createLoop', () => {
     expect(loop.isRunning()).toBe(false);
     expect(fake.hasPending()).toBe(false);
     expect(fake.canceled.length).toBe(1);
+    expect(fake.pendingCount()).toBe(0);
     fake.tick(16);
     expect(updates).toHaveLength(1);
   });
@@ -88,6 +98,25 @@ describe('createLoop', () => {
     });
     loop.start();
     loop.start();
+    expect(fake.pendingCount()).toBe(1);
+    fake.tick(16);
+    expect(updates).toHaveLength(1);
+  });
+
+  it('stop() from inside update leaves no pending frame', () => {
+    const fake = fakeTiming();
+    const updates: number[] = [];
+    const loop = createLoop({
+      update: (dt) => {
+        updates.push(dt);
+        loop.stop();
+      },
+      render: () => {},
+      timing: fake.timing,
+    });
+    loop.start();
+    fake.tick(16);
+    expect(fake.pendingCount()).toBe(0);
     fake.tick(16);
     expect(updates).toHaveLength(1);
   });
