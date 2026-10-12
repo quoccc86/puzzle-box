@@ -2,6 +2,8 @@
 
 A browser-based collection of puzzle games, written in TypeScript.
 
+**Play online:** [quoccc86.github.io/puzzle-box](https://quoccc86.github.io/puzzle-box/)
+
 ## Status
 
 | Milestone | State |
