@@ -706,10 +706,10 @@ describe('sokoban game', () => {
     expect(canvas.height).toBeGreaterThan(0);
   });
 
-  it('starts with a zero move counter and no win banner', () => {
+  it('starts with a zero move counter and a hidden win banner', () => {
     const { moves, banner } = setup();
     expect(moves.textContent).toBe('Moves: 0');
-    expect(banner()).toBeNull();
+    expect(banner()!.hidden).toBe(true);
   });
 
   it('increments the counter on a valid key press', () => {
@@ -734,20 +734,31 @@ describe('sokoban game', () => {
 
   it('shows the win banner once every box is on a target', () => {
     const { banner, press } = setup();
-    // Level 1: player at col 2, target col 3, box col 4 — push right, then walk onto the target.
+    // Level 1 is `# @$. #`: the box sits immediately right of the target, so a
+    // single rightward push lands it on the target and solves the level.
     press('ArrowRight');
-    press('ArrowRight');
-    press('ArrowLeft');
-    press('ArrowLeft');
-    press('ArrowLeft');
     expect(banner()).not.toBeNull();
   });
 
-  it('unmount removes the key listener', () => {
-    const { moves, press } = setup();
+  it('keeps the banner hidden while a box is still off its target', () => {
+    const { banner, press } = setup();
+    // Pushing twice drives the box past the target to a non-target cell.
+    press('ArrowRight');
+    press('ArrowRight');
+    expect(banner()!.hidden).toBe(true);
+  });
+
+  it('unmount clears the stage and stops handling keys', () => {
+    const { stage, moves, press } = setup();
+    const counter = moves();
+    expect(counter.textContent).toBe('Moves: 0');
+
     sokoban.unmount();
+    expect(stage.childElementCount).toBe(0);
+
+    // The listener is gone, so this key must not touch the detached counter.
     press('ArrowLeft');
-    expect(moves.textContent).toBe('Moves: 0');
+    expect(counter.textContent).toBe('Moves: 0');
   });
 });
 ```
