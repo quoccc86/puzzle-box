@@ -47,6 +47,7 @@ describe('applyMove', () => {
     const state = parseLevel(MAP.join('\n'));
     const beforePlayer = state.player;
     const beforeBoxes = [...state.boxes];
+    const beforeBoxSet = state.boxes;
 
     applyMove(state, 'right');
     expect(state.player).toBe(beforePlayer);
@@ -57,6 +58,7 @@ describe('applyMove', () => {
     applyMove(state, 'up');
     expect(state.player).toBe(beforePlayer);
     expect([...state.boxes]).toEqual(beforeBoxes);
+    expect(state.boxes).toBe(beforeBoxSet);
   });
 
   it('does not mutate the box set shared with the pre-move state', () => {
@@ -79,6 +81,12 @@ describe('isSolved', () => {
     expect([...state.boxes]).toEqual([6]);
     expect(state.player).toBe(7);
     expect(isSolved(state)).toBe(true);
+  });
+
+  it('is false when extra boxes remain after every target is covered', () => {
+    const parsed = parseLevel(['#####', '#*@ #', '#####'].join('\n'));
+    const state = { ...parsed, boxes: new Set([...parsed.boxes, 8]) };
+    expect(isSolved(state)).toBe(false);
   });
 });
 

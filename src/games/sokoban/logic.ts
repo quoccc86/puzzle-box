@@ -50,6 +50,7 @@ export function applyMove(state: SokobanState, dir: Direction): SokobanState | n
 }
 
 export function isSolved(state: SokobanState): boolean {
+  if (state.boxes.size !== state.targets.size) return false;
   for (const target of state.targets) {
     if (!state.boxes.has(target)) return false;
   }
