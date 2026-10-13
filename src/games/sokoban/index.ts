@@ -44,7 +44,6 @@ function build(el: HTMLElement): Mounted {
   restart.className = 'sokoban-restart';
 
   hud.append(moves, restart);
-  canvas.classList.add('sokoban-canvas');
   wrap.append(hud, canvas);
 
   const banner = document.createElement('p');

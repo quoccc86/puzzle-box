@@ -50,6 +50,22 @@ describe('renderLevel', () => {
     expect(markers[0]![1]).toBe(TILE + inset);
   });
 
+  it('draws an on-target box after the target and before the player', () => {
+    const state = parseLevel(['#######', '#@*   #', '#######'].join('\n'));
+    const ctx = fakeCtx();
+    const observedStyles: string[] = [];
+    Object.defineProperty(ctx, 'fillStyle', {
+      set: (value: string) => observedStyles.push(value),
+      get: () => observedStyles.at(-1) ?? '',
+    });
+
+    renderLevel(ctx, state);
+
+    expect(observedStyles.slice(0, 6)).toEqual(['#0f172a', ...Array(5).fill('#1e293b')]);
+    expect(observedStyles.slice(6, 22)).toEqual(Array(16).fill('#475569'));
+    expect(observedStyles.slice(22)).toEqual(['#64748b', '#ca8a04', '#4ade80']);
+  });
+
   it('clears the previous frame before drawing', () => {
     const state = parseLevel(['#####', '#@$.#', '#####'].join('\n'));
     const ctx = fakeCtx();

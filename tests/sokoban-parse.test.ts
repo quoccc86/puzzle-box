@@ -42,6 +42,7 @@ describe('parseLevel', () => {
     expect(() => parseLevel(['#####', '#@$.#', '#$@ #', '#####'].join('\n'))).toThrow(/player/i);
     expect(() => parseLevel(['#####', '# @ #', '#####'].join('\n'))).toThrow(/box/i);
     expect(() => parseLevel(['#####', '#  $#', '# @ #', '#####'].join('\n'))).toThrow(/target/i);
+    expect(() => parseLevel(['#####', '#@$$#', '# . #', '#####'].join('\n'))).toThrow(/same number of boxes and targets/i);
     expect(() => parseLevel('')).toThrow(/empty/i);
   });
 });

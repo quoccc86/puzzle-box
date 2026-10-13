@@ -8,6 +8,16 @@ import { parseLevel } from '../src/games/sokoban/parse';
 const MAP = ['#####', '#@$.#', '#####'];
 
 describe('applyMove', () => {
+  it('moves up and down to the expected adjacent rows', () => {
+    const upperRowPlayer = parseLevel(['#######', '# @  .#', '#$    #', '#######'].join('\n'));
+    const lowerRowPlayer = parseLevel(['#######', '#    .#', '#$@   #', '#######'].join('\n'));
+
+    expect(upperRowPlayer.player).toBe(9);
+    expect(applyMove(upperRowPlayer, 'down')!.player).toBe(16);
+    expect(lowerRowPlayer.player).toBe(16);
+    expect(applyMove(lowerRowPlayer, 'up')!.player).toBe(9);
+  });
+
   it('moves the player into free floor and counts the move', () => {
     const state = parseLevel(['#####', '# @ #', '#  $#', '#  .#', '#####'].join('\n'));
     const next = applyMove(state, 'right');

@@ -1,5 +1,3 @@
-import { LEVELS } from './levels';
-
 export interface SokobanState {
   width: number;
   height: number;
@@ -70,6 +68,9 @@ export function parseLevel(text: string): SokobanState {
   if (players.length > 1) throw new Error('Level must contain exactly one player');
   if (boxes.size === 0) throw new Error('Level must contain at least one box');
   if (targets.size === 0) throw new Error('Level must contain at least one target');
+  if (boxes.size !== targets.size) {
+    throw new Error('Level must contain the same number of boxes and targets');
+  }
 
   return {
     width,

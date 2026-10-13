@@ -18,7 +18,6 @@ export function levelSize(state: SokobanState): { cols: number; rows: number } {
 
 export function renderLevel(ctx: CanvasRenderingContext2D, state: SokobanState): void {
   const { cols, rows } = levelSize(state);
-  ctx.fillStyle = COLORS.background;
   ctx.clearRect(0, 0, cols * TILE, rows * TILE);
   ctx.fillStyle = COLORS.background;
   ctx.fillRect(0, 0, cols * TILE, rows * TILE);
