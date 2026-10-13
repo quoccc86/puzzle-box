@@ -6,7 +6,7 @@ const CAMPAIGN_SOLUTIONS = [
   ['ArrowRight'],
   ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowDown'],
   ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowLeft'],
-  ['ArrowLeft', 'ArrowDown', 'ArrowLeft', 'ArrowLeft', 'ArrowUp', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft'],
+  ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowUp'],
   ['ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowLeft', 'ArrowUp', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowUp', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft'],
 ];
 
@@ -16,6 +16,7 @@ function setup() {
   sokoban.mount(stage);
   return {
     stage,
+    campaign: () => stage.querySelector('[data-testid="campaign"]')!,
     canvas: () => stage.querySelector('canvas')!,
     moves: () => stage.querySelector('[data-testid="moves"]')!,
     restart: () => stage.querySelector('[data-testid="restart"]') as HTMLButtonElement,
@@ -50,6 +51,22 @@ describe('sokoban game', () => {
     const { level, campaignIndex } = setup();
     expect(level().textContent).toBe('Level 1 / 5');
     expect(campaignIndex()).toBe(0);
+  });
+
+  it('groups campaign text and game board in one layout wrapper', () => {
+    const { campaign, stage } = setup();
+    expect(campaign().parentElement).toBe(stage);
+    expect([...campaign().children].map((child) => child.className)).toEqual([
+      'sokoban-level',
+      'sokoban-instructions',
+      'sokoban-level-hint',
+      'sokoban',
+      'sokoban-win',
+      'sokoban-win',
+      'sokoban-restart',
+    ]);
+    expect((campaign().children[5] as HTMLElement).dataset.testid).toBe('campaign-complete');
+    expect((campaign().children[6] as HTMLElement).dataset.testid).toBe('replay');
   });
 
   it('advances to the next level after the win delay', () => {
