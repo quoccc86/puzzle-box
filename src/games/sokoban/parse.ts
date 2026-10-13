@@ -35,6 +35,9 @@ export function parseLevel(text: string): SokobanState {
     for (let x = 0; x < width; x += 1) {
       const index = y * width + x;
       const cell = row[x]!;
+      if (!'# .$*@+'.includes(cell)) {
+        throw new Error(`Level contains invalid character '${cell}' at row ${y + 1}, column ${x + 1}`);
+      }
       const isWall = cell === '#';
       if (isWall) walls.add(index);
       else floors.add(index);
@@ -63,7 +66,7 @@ export function parseLevel(text: string): SokobanState {
     }
   });
 
-  if (players.length === 0) throw new Error('Level must contain exactly one player');
+  if (players.length === 0) throw new Error('Level must contain a player');
   if (players.length > 1) throw new Error('Level must contain exactly one player');
   if (boxes.size === 0) throw new Error('Level must contain at least one box');
   if (targets.size === 0) throw new Error('Level must contain at least one target');

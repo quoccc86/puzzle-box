@@ -32,6 +32,10 @@ describe('parseLevel', () => {
     expect([...state.targets].sort((a, b) => a - b)).toEqual([10, 12]);
   });
 
+  it('rejects unsupported characters with their position', () => {
+    expect(() => parseLevel(['#####', '#x$.#', '#####'].join('\n'))).toThrow(/invalid.*character.*x.*row 2.*column 2/i);
+  });
+
   it('rejects malformed maps', () => {
     expect(() => parseLevel(['####', '#@ $', '###'].join('\n'))).toThrow(/same width/i);
     expect(() => parseLevel(['#####', '# . #', '#####'].join('\n'))).toThrow(/player/i);
