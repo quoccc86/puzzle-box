@@ -528,7 +528,8 @@ describe('renderLevel', () => {
     const ctx = fakeCtx();
     renderLevel(ctx, state);
     const rects = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls;
-    const fullTiles = rects.filter(([, w, h]) => w === TILE && h === TILE);
+    // fillRect is called as (x, y, width, height)
+    const fullTiles = rects.filter(([, , w, h]) => w === TILE && h === TILE);
     // 3 floor cells + 12 walls + 1 box + 1 player
     expect(fullTiles.length).toBe(17);
     for (const [x, y] of fullTiles) {
@@ -543,11 +544,11 @@ describe('renderLevel', () => {
     renderLevel(ctx, state);
     const inset = TILE / 4;
     const markers = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.filter(
-      ([, w, h]) => w === TILE - inset * 2,
+      ([, , w, h]) => w === TILE - inset * 2 && h === TILE - inset * 2,
     );
     expect(markers.length).toBe(1);
-    expect(markers[0]![2]).toBe(inset);
-    expect(markers[0]![3]).toBe(inset);
+    expect(markers[0]![0]).toBe(TILE * 3 + inset);
+    expect(markers[0]![1]).toBe(TILE + inset);
   });
 
   it('clears the previous frame before drawing', () => {
