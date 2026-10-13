@@ -10,7 +10,7 @@ A browser-based collection of puzzle games, written in TypeScript.
 |---|---|
 | 1 — Core shell + menu |  v0.1.0 |
 | 2 — Sokoban MVP |  v0.2.0 |
-| 3 — Undo/redo |  not started |
+| 3 — Undo/redo |  v0.3.0 |
 
 ## Run locally
 
