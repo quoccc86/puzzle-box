@@ -2,6 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sokoban } from '../src/games/sokoban';
 import { TILE } from '../src/games/sokoban/render';
 
+const CAMPAIGN_SOLUTIONS = [
+  ['ArrowRight'],
+  ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowDown'],
+  ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowLeft'],
+  ['ArrowLeft', 'ArrowDown', 'ArrowLeft', 'ArrowLeft', 'ArrowUp', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft'],
+  ['ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowLeft', 'ArrowUp', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowUp', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft'],
+];
+
 function setup() {
   const stage = document.createElement('div');
   document.body.append(stage);
@@ -11,6 +19,9 @@ function setup() {
     canvas: () => stage.querySelector('canvas')!,
     moves: () => stage.querySelector('[data-testid="moves"]')!,
     restart: () => stage.querySelector('[data-testid="restart"]') as HTMLButtonElement,
+    replay: () => stage.querySelector('[data-testid="replay"]') as HTMLButtonElement | null,
+    level: () => stage.querySelector('[data-testid="level"]')!,
+    campaignIndex: () => Number(stage.querySelector('[data-testid="level"]')?.getAttribute('data-index')),
     undo: () => stage.querySelector('[data-testid="undo"]') as HTMLButtonElement,
     redo: () => stage.querySelector('[data-testid="redo"]') as HTMLButtonElement,
     banner: () => stage.querySelector('[data-testid="win"]') as HTMLElement | null,
@@ -30,8 +41,105 @@ describe('sokoban game', () => {
 
   afterEach(() => {
     sokoban.unmount();
+    vi.useRealTimers();
     document.body.replaceChildren();
     vi.restoreAllMocks();
+  });
+
+  it('shows campaign progress at level one', () => {
+    const { level, campaignIndex } = setup();
+    expect(level().textContent).toBe('Level 1 / 5');
+    expect(campaignIndex()).toBe(0);
+  });
+
+  it('advances to the next level after the win delay', () => {
+    vi.useFakeTimers();
+    const { level, campaignIndex, banner, press } = setup();
+    press('ArrowRight');
+    expect(banner()!.hidden).toBe(false);
+    vi.advanceTimersByTime(999);
+    expect(level().textContent).toBe('Level 1 / 5');
+    expect(campaignIndex()).toBe(0);
+    vi.advanceTimersByTime(1);
+    expect(level().textContent).toBe('Level 2 / 5');
+    expect(campaignIndex()).toBe(1);
+    expect(banner()!.hidden).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('redoing a win restarts the delayed level advance', () => {
+    vi.useFakeTimers();
+    const { level, campaignIndex, banner, press, undo, redo } = setup();
+    press('ArrowRight');
+    expect(banner()!.hidden).toBe(false);
+    undo().click();
+    expect(banner()!.hidden).toBe(true);
+    redo().click();
+    expect(banner()!.hidden).toBe(false);
+    vi.advanceTimersByTime(1000);
+    expect(campaignIndex()).toBe(1);
+    expect(level().textContent).toBe('Level 2 / 5');
+  });
+
+  it('restart resets the current campaign level, not the campaign', () => {
+    vi.useFakeTimers();
+    const { level, campaignIndex, banner, moves, press, restart } = setup();
+    press('ArrowRight');
+    vi.advanceTimersByTime(1000);
+    expect(campaignIndex()).toBe(1);
+    // Level 2 needs Down, Up, Right, Down to solve; reset after one move.
+    press('ArrowDown');
+    expect(level().textContent).toBe('Level 2 / 5');
+    restart().click();
+    expect(level().textContent).toBe('Level 2 / 5');
+    expect(campaignIndex()).toBe(1);
+    expect(moves().textContent).toBe('Moves: 0');
+    expect(banner()!.hidden).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('shows campaign completion after the fifth level is solved', () => {
+    vi.useFakeTimers();
+    const { level, campaignIndex, banner, replay, press } = setup();
+    for (let levelIndex = 0; levelIndex < CAMPAIGN_SOLUTIONS.length; levelIndex += 1) {
+      for (const key of CAMPAIGN_SOLUTIONS[levelIndex]!) press(key);
+      expect(banner()!.hidden).toBe(false);
+      vi.advanceTimersByTime(1000);
+      if (levelIndex < CAMPAIGN_SOLUTIONS.length - 1) {
+        expect(campaignIndex()).toBe(levelIndex + 1);
+        expect(banner()!.hidden).toBe(true);
+      }
+    }
+    expect(campaignIndex()).toBe(4);
+    expect(level().textContent).toBe('Campaign complete!');
+    expect(replay()).not.toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('cancels the level transition timer when unmounted', () => {
+    vi.useFakeTimers();
+    const { press } = setup();
+    press('ArrowRight');
+    sokoban.unmount();
+    vi.advanceTimersByTime(1000);
+    expect(document.body.querySelector('[data-testid="level"]')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('replay starts a fresh campaign after completion', () => {
+    vi.useFakeTimers();
+    const { level, campaignIndex, banner, replay, press } = setup();
+    for (const solution of CAMPAIGN_SOLUTIONS) {
+      for (const key of solution) press(key);
+      expect(banner()!.hidden).toBe(false);
+      vi.advanceTimersByTime(1000);
+    }
+    expect(replay()).not.toBeNull();
+    replay()!.click();
+    expect(campaignIndex()).toBe(0);
+    expect(level().textContent).toBe('Level 1 / 5');
+    expect(banner()!.hidden).toBe(true);
+    vi.useRealTimers();
   });
 
   it('mounts a canvas sized to the level', () => {
@@ -68,13 +176,15 @@ describe('sokoban game', () => {
   });
 
   it('undo restores the box position and move counter', () => {
-    const { moves, press, undo, banner } = setup();
+    vi.useFakeTimers();
+    const { moves, press, undo, banner, level } = setup();
     press('ArrowRight');
     expect(moves().textContent).toBe('Moves: 1');
     expect(banner()!.hidden).toBe(false);
     undo().click();
     expect(moves().textContent).toBe('Moves: 0');
     expect(banner()!.hidden).toBe(true);
+    expect(level().textContent).toBe('Level 1 / 5');
   });
 
   it('redo reapplies the undone push', () => {
@@ -149,9 +259,9 @@ describe('sokoban game', () => {
 
   it('redoes a sequence in order', () => {
     const { moves, press, undo, redo } = setup();
-    press('ArrowRight');
-    press('ArrowUp');
     press('ArrowLeft');
+    press('ArrowUp');
+    press('ArrowRight');
     undo().click();
     undo().click();
     undo().click();
@@ -264,11 +374,15 @@ describe('sokoban game', () => {
     expect(banner()!.hidden).toBe(false);
   });
 
-  it('keeps the banner hidden while a box is still off its target', () => {
-    const { banner, press } = setup();
-    // Pushing twice drives the box past the target to a non-target cell.
+  it('undoing a win during the delay hides the banner and cancels level advance', () => {
+    vi.useFakeTimers();
+    const { banner, press, undo, level } = setup();
     press('ArrowRight');
-    press('ArrowRight');
+    expect(banner()!.hidden).toBe(false);
+    undo().click();
+    expect(banner()!.hidden).toBe(true);
+    vi.advanceTimersByTime(1000);
+    expect(level().textContent).toBe('Level 1 / 5');
     expect(banner()!.hidden).toBe(true);
   });
 
