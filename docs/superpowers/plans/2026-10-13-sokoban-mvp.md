@@ -65,10 +65,10 @@ describe('parseLevel', () => {
     const state = parseLevel(FIXTURE.join('\n'));
     expect(state.width).toBe(5);
     expect(state.height).toBe(4);
-    // player sits at row 1, col 2 → index 1 * 5 + 2
-    expect(state.player).toBe(7);
-    // target at row 1, col 1 → index 6; box at row 2, col 2 → index 12
-    expect([...state.targets]).toEqual([6]);
+    // '# .@#' is row 1: target at col 2 → index 1 * 5 + 2 = 7, player at col 3 → 8
+    expect([...state.targets]).toEqual([7]);
+    expect(state.player).toBe(8);
+    // '# $ #' is row 2: box at col 2 → index 2 * 5 + 2 = 12
     expect([...state.boxes]).toEqual([12]);
     expect(state.moves).toBe(0);
   });
@@ -76,23 +76,25 @@ describe('parseLevel', () => {
   it('marks walls and floors as disjoint sets', () => {
     const state = parseLevel(FIXTURE.join('\n'));
     for (const wall of state.walls) expect(state.floors.has(wall)).toBe(false);
-    // walls occupy the 12 border cells of a 5x4 map
-    expect(state.walls.size).toBe(12);
+    // 20 cells minus 6 interior cells → 14 wall cells
+    expect(state.walls.size).toBe(14);
+    expect(state.floors.size).toBe(6);
   });
 
   it('treats * as box on target and + as player on target', () => {
-    const state = parseLevel(['#####', '#@$.#', '#####'].join('\n'));
-    expect([...state.targets].sort((a, b) => a - b)).toEqual([6, 7]);
-    expect([...state.boxes]).toEqual([7]);
-    expect(state.player).toBe(6);
+    const state = parseLevel(['#######', '#@$. *#', '#######'].join('\n'));
+    expect(state.player).toBe(8);
+    // '$' at col 2 and '*' at col 5 are boxes; '.', '+' and '*' are targets
+    expect([...state.boxes].sort((a, b) => a - b)).toEqual([9, 12]);
+    expect([...state.targets].sort((a, b) => a - b)).toEqual([10, 12]);
   });
 
   it('rejects malformed maps', () => {
     expect(() => parseLevel(['####', '#@ $', '###'].join('\n'))).toThrow(/same width/i);
     expect(() => parseLevel(['#####', '# . #', '#####'].join('\n'))).toThrow(/player/i);
-    expect(() => parseLevel(['#####', '#@$.#', '#$@.#', '#####'].join('\n'))).toThrow(/player/i);
-    expect(() => parseLevel(['#####', '# . #', '#####'].join('\n'))).toThrow(/box/i);
-    expect(() => parseLevel(['#####', '# @ #', '#####'].join('\n'))).toThrow(/target/i);
+    expect(() => parseLevel(['#####', '#@$.#', '#$@ #', '#####'].join('\n'))).toThrow(/player/i);
+    expect(() => parseLevel(['#####', '# @ #', '#####'].join('\n'))).toThrow(/box/i);
+    expect(() => parseLevel(['#####', '#  $#', '# @ #', '#####'].join('\n'))).toThrow(/target/i);
     expect(() => parseLevel('')).toThrow(/empty/i);
   });
 });
@@ -118,6 +120,10 @@ Expected: FAIL — cannot resolve `../src/games/sokoban/parse`.
 
 `src/games/sokoban/levels.ts`:
 
+Each level below was verified with a breadth-first solver: rectangular, equal
+box and target counts, solvable, with a rising minimum solution length
+(1, 4, 7, 23, 38 moves).
+
 ```ts
 export const LEVELS: readonly string[] = [
   [
@@ -129,34 +135,32 @@ export const LEVELS: readonly string[] = [
   ].join('\n'),
   [
     '########',
-    '#      #',
-    '#  @$ .#',
-    '#  $.. #',
-    '#      #',
+    '#  @   #',
+    '#  $$  #',
+    '#  ..  #',
     '########',
   ].join('\n'),
   [
     '########',
-    '#  ..  #',
-    '#  $$  #',
-    '#  @   #',
-    '#      #',
+    '#   @  #',
+    '#  .$$ #',
+    '#   .  #',
     '########',
   ].join('\n'),
   [
     '#########',
     '#   #   #',
     '# .$. # #',
-    '# .$.$@ #',
+    '# .$@$  #',
     '#   #   #',
     '#########',
   ].join('\n'),
   [
     '#########',
-    '#  ...  #',
-    '#  $$$  #',
-    '#   @   #',
-    '#  $#   #',
+    '#   #   #',
+    '# .$$ # #',
+    '# ..@$  #',
+    '#   #   #',
     '#########',
   ].join('\n'),
 ];
@@ -296,22 +300,26 @@ import { describe, expect, it } from 'vitest';
 import { applyMove, initialState, isSolved } from '../src/games/sokoban/logic';
 import { parseLevel } from '../src/games/sokoban/parse';
 
-// player at index 6, target at 7, box at 8, free cell at 9 (row 1 of a 5-wide map)
+// MAP: player at 6, box at 7, target at 8. Row 1 is the only walkable row, so
+// 'up' hits a wall and 'right' is the one legal move, which pushes the box onto
+// the target. Verified with the real move rules.
 const MAP = ['#####', '#@$.#', '#####'];
 
 describe('applyMove', () => {
   it('moves the player into free floor and counts the move', () => {
-    const state = parseLevel(MAP.join('\n'));
+    const state = parseLevel(['#####', '# @ #', '#  $#', '#  .#', '#####'].join('\n'));
     const next = applyMove(state, 'right');
     expect(next).not.toBeNull();
-    expect(next!.player).toBe(7);
+    expect(next!.player).toBe(8);
     expect(next!.moves).toBe(1);
+    // the box at index 13 is not in the way, so it does not move
+    expect([...next!.boxes]).toEqual([13]);
   });
 
   it('pushes the box when the cell beyond it is free', () => {
     const state = parseLevel(MAP.join('\n'));
     const next = applyMove(state, 'right');
-    expect([...next!.boxes]).toEqual([9]);
+    expect([...next!.boxes]).toEqual([8]);
   });
 
   it('rejects a move into a wall', () => {
@@ -320,11 +328,17 @@ describe('applyMove', () => {
   });
 
   it('rejects a push into a wall or off-grid edge', () => {
-    const edge = parseLevel(['#####', '# $@#', '#####'].join('\n'));
-    expect(applyMove(edge, 'right')).toBeNull();
+    // box at index 4 sits on the open left boundary; pushing left leaves the grid
+    const edge = parseLevel(['####', '$@ .', '####'].join('\n'));
+    expect(edge.player).toBe(5);
+    expect([...edge.boxes]).toEqual([4]);
+    expect(applyMove(edge, 'left')).toBeNull();
 
-    const wall = parseLevel(['######', '#@$ #', '######'].join('\n'));
-    expect(applyMove(wall, 'right')).toBeNull();
+    // box at index 7 sits against the left wall; pushing left hits that wall
+    const wall = parseLevel(['######', '#$@ .#', '######'].join('\n'));
+    expect(wall.player).toBe(8);
+    expect([...wall.boxes]).toEqual([7]);
+    expect(applyMove(wall, 'left')).toBeNull();
   });
 
   it('leaves the original state untouched', () => {
@@ -358,7 +372,10 @@ describe('isSolved', () => {
   });
 
   it('is true once every target holds a box', () => {
-    const state = parseLevel(['#####', '#.$@#', '#####'].join('\n'));
+    const state = parseLevel(['#####', '#*@ #', '#####'].join('\n'));
+    expect([...state.targets]).toEqual([6]);
+    expect([...state.boxes]).toEqual([6]);
+    expect(state.player).toBe(7);
     expect(isSolved(state)).toBe(true);
   });
 });
@@ -506,19 +523,32 @@ describe('levelSize', () => {
 });
 
 describe('renderLevel', () => {
-  it('draws a canvas sized to the tile grid', () => {
+  it('draws one full-tile rect for every wall, box, and the player', () => {
     const state = parseLevel(['#####', '#@$.#', '#####'].join('\n'));
     const ctx = fakeCtx();
     renderLevel(ctx, state);
     const rects = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls;
-    // 12 wall cells drawn first, then target, then box, then player
-    expect(rects.length).toBeGreaterThanOrEqual(15);
-    for (const [x, y, w, h] of rects) {
-      expect(w).toBe(TILE);
-      expect(h).toBe(TILE);
+    // fillRect is called as (x, y, width, height)
+    const fullTiles = rects.filter(([, , w, h]) => w === TILE && h === TILE);
+    // 3 floor cells + 12 walls + 1 box + 1 player
+    expect(fullTiles.length).toBe(17);
+    for (const [x, y] of fullTiles) {
       expect(x % TILE).toBe(0);
       expect(y % TILE).toBe(0);
     }
+  });
+
+  it('draws the target marker inset inside its tile', () => {
+    const state = parseLevel(['#####', '#@$.#', '#####'].join('\n'));
+    const ctx = fakeCtx();
+    renderLevel(ctx, state);
+    const inset = TILE / 4;
+    const markers = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.filter(
+      ([, , w, h]) => w === TILE - inset * 2 && h === TILE - inset * 2,
+    );
+    expect(markers.length).toBe(1);
+    expect(markers[0]![0]).toBe(TILE * 3 + inset);
+    expect(markers[0]![1]).toBe(TILE + inset);
   });
 
   it('clears the previous frame before drawing', () => {
@@ -638,6 +668,7 @@ git push
 ```ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sokoban } from '../src/games/sokoban';
+import { TILE } from '../src/games/sokoban/render';
 
 function setup() {
   const stage = document.createElement('div');
@@ -671,53 +702,65 @@ describe('sokoban game', () => {
 
   it('mounts a canvas sized to the level', () => {
     const { canvas } = setup();
-    expect(canvas).not.toBeNull();
-    expect(canvas.width).toBeGreaterThan(0);
-    expect(canvas.height).toBeGreaterThan(0);
+    const element = canvas();
+    expect(element).not.toBeNull();
+    expect(element.width).toBe(7 * TILE);
+    expect(element.height).toBe(5 * TILE);
   });
 
-  it('starts with a zero move counter and no win banner', () => {
+  it('starts with a zero move counter and a hidden win banner', () => {
     const { moves, banner } = setup();
-    expect(moves.textContent).toBe('Moves: 0');
-    expect(banner()).toBeNull();
+    expect(moves().textContent).toBe('Moves: 0');
+    expect(banner()!.hidden).toBe(true);
   });
 
   it('increments the counter on a valid key press', () => {
     const { moves, press } = setup();
     press('ArrowLeft');
-    expect(moves.textContent).toBe('Moves: 1');
+    expect(moves().textContent).toBe('Moves: 1');
   });
 
   it('ignores keys that are not mapped to a direction', () => {
     const { moves, press } = setup();
     press('Enter');
     press('q');
-    expect(moves.textContent).toBe('Moves: 0');
+    expect(moves().textContent).toBe('Moves: 0');
   });
 
   it('restart resets the counter to zero', () => {
     const { moves, restart, press } = setup();
     press('ArrowLeft');
     restart().click();
-    expect(moves.textContent).toBe('Moves: 0');
+    expect(moves().textContent).toBe('Moves: 0');
   });
 
   it('shows the win banner once every box is on a target', () => {
     const { banner, press } = setup();
-    // Level 1: player at col 2, target col 3, box col 4 — push right, then walk onto the target.
+    // Level 1 is `# @$. #`: the box sits immediately right of the target, so a
+    // single rightward push lands it on the target and solves the level.
     press('ArrowRight');
-    press('ArrowRight');
-    press('ArrowLeft');
-    press('ArrowLeft');
-    press('ArrowLeft');
-    expect(banner()).not.toBeNull();
+    expect(banner()!.hidden).toBe(false);
   });
 
-  it('unmount removes the key listener', () => {
-    const { moves, press } = setup();
+  it('keeps the banner hidden while a box is still off its target', () => {
+    const { banner, press } = setup();
+    // Pushing twice drives the box past the target to a non-target cell.
+    press('ArrowRight');
+    press('ArrowRight');
+    expect(banner()!.hidden).toBe(true);
+  });
+
+  it('unmount clears the stage and stops handling keys', () => {
+    const { stage, moves, press } = setup();
+    const counter = moves();
+    expect(counter.textContent).toBe('Moves: 0');
+
     sokoban.unmount();
+    expect(stage.childElementCount).toBe(0);
+
+    // The listener is gone, so this key must not touch the detached counter.
     press('ArrowLeft');
-    expect(moves.textContent).toBe('Moves: 0');
+    expect(counter.textContent).toBe('Moves: 0');
   });
 });
 ```
@@ -933,14 +976,15 @@ Append to `src/style.css`:
 
 - [ ] **Step 3: Update the README status table**
 
-In `README.md`, change the status table rows to:
+In `README.md`, change the second row of the status table so it matches the
+table's existing plain-text style (no emoji):
 
 ```markdown
 | Milestone | State |
 |---|---|
-| 1 — Core shell + menu | ✅ v0.1.0 |
-| 2 — Sokoban MVP | ✅ v0.2.0 |
-| 3 — Undo/redo | ⬜ not started |
+| 1 — Core shell + menu |  v0.1.0 |
+| 2 — Sokoban MVP |  v0.2.0 |
+| 3 — Undo/redo |  not started |
 ```
 
 - [ ] **Step 4: Verify typecheck, tests, and build**

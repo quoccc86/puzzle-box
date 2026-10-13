@@ -57,3 +57,40 @@ body {
   border-radius: 0.5rem;
   max-width: 100%;
 }
+
+.sokoban {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sokoban-hud {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #e2e8f0;
+}
+
+.sokoban-restart {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid #6b7280;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sokoban-restart:hover {
+  border-color: #4ade80;
+}
+
+.sokoban-win {
+  margin: 0;
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.sokoban-win[hidden] {
+  display: none;
+}
