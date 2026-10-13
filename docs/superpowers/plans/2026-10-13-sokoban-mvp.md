@@ -668,6 +668,7 @@ git push
 ```ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sokoban } from '../src/games/sokoban';
+import { TILE } from '../src/games/sokoban/render';
 
 function setup() {
   const stage = document.createElement('div');
@@ -701,35 +702,36 @@ describe('sokoban game', () => {
 
   it('mounts a canvas sized to the level', () => {
     const { canvas } = setup();
-    expect(canvas).not.toBeNull();
-    expect(canvas.width).toBeGreaterThan(0);
-    expect(canvas.height).toBeGreaterThan(0);
+    const element = canvas();
+    expect(element).not.toBeNull();
+    expect(element.width).toBe(7 * TILE);
+    expect(element.height).toBe(5 * TILE);
   });
 
   it('starts with a zero move counter and a hidden win banner', () => {
     const { moves, banner } = setup();
-    expect(moves.textContent).toBe('Moves: 0');
+    expect(moves().textContent).toBe('Moves: 0');
     expect(banner()!.hidden).toBe(true);
   });
 
   it('increments the counter on a valid key press', () => {
     const { moves, press } = setup();
     press('ArrowLeft');
-    expect(moves.textContent).toBe('Moves: 1');
+    expect(moves().textContent).toBe('Moves: 1');
   });
 
   it('ignores keys that are not mapped to a direction', () => {
     const { moves, press } = setup();
     press('Enter');
     press('q');
-    expect(moves.textContent).toBe('Moves: 0');
+    expect(moves().textContent).toBe('Moves: 0');
   });
 
   it('restart resets the counter to zero', () => {
     const { moves, restart, press } = setup();
     press('ArrowLeft');
     restart().click();
-    expect(moves.textContent).toBe('Moves: 0');
+    expect(moves().textContent).toBe('Moves: 0');
   });
 
   it('shows the win banner once every box is on a target', () => {
@@ -737,7 +739,7 @@ describe('sokoban game', () => {
     // Level 1 is `# @$. #`: the box sits immediately right of the target, so a
     // single rightward push lands it on the target and solves the level.
     press('ArrowRight');
-    expect(banner()).not.toBeNull();
+    expect(banner()!.hidden).toBe(false);
   });
 
   it('keeps the banner hidden while a box is still off its target', () => {
