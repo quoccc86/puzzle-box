@@ -28,17 +28,24 @@ body {
   gap: 1rem;
 }
 
+.menu-card,
+#back {
+  padding: 0.6rem 1rem;
+  border: 1px solid #6b7280;
+  border-radius: 0.5rem;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+}
+
 .menu-card {
   width: 100%;
   padding: 1.5rem 1rem;
   font-size: 1.1rem;
-  border: 1px solid #6b7280;
-  border-radius: 0.75rem;
-  background: transparent;
-  cursor: pointer;
 }
 
-.menu-card:hover {
+.menu-card:hover,
+#back:hover {
   border-color: #4ade80;
 }
 
@@ -76,8 +83,8 @@ body {
   padding: 0.35rem 0.9rem;
   border: 1px solid #6b7280;
   border-radius: 0.5rem;
-  background: transparent;
-  color: inherit;
+  background: #000;
+  color: #fff;
   cursor: pointer;
 }
 
