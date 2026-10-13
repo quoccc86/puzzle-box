@@ -976,14 +976,15 @@ Append to `src/style.css`:
 
 - [ ] **Step 3: Update the README status table**
 
-In `README.md`, change the status table rows to:
+In `README.md`, change the second row of the status table so it matches the
+table's existing plain-text style (no emoji):
 
 ```markdown
 | Milestone | State |
 |---|---|
-| 1 — Core shell + menu | ✅ v0.1.0 |
-| 2 — Sokoban MVP | ✅ v0.2.0 |
-| 3 — Undo/redo | ⬜ not started |
+| 1 — Core shell + menu |  v0.1.0 |
+| 2 — Sokoban MVP |  v0.2.0 |
+| 3 — Undo/redo |  not started |
 ```
 
 - [ ] **Step 4: Verify typecheck, tests, and build**
