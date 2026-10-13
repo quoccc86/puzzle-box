@@ -59,11 +59,47 @@ describe('sokoban game', () => {
     expect(moves().textContent).toBe('Moves: 0');
   });
 
-  it('restart resets the counter to zero', () => {
-    const { moves, restart, press } = setup();
+  it('restart resets the counter and redraws the level', () => {
+    const { canvas, moves, restart, press } = setup();
+    const ctx = canvas().getContext('2d')!;
+    const fillRect = vi.mocked(ctx.fillRect);
+    const drawsBeforeRestart = fillRect.mock.calls.length;
+
     press('ArrowLeft');
     restart().click();
+
     expect(moves().textContent).toBe('Moves: 0');
+    expect(fillRect.mock.calls.length).toBeGreaterThan(drawsBeforeRestart);
+  });
+
+  it('removes the previous key listener when mounting again', () => {
+    const firstStage = document.createElement('div');
+    const secondStage = document.createElement('div');
+    document.body.append(firstStage, secondStage);
+    sokoban.mount(firstStage);
+    const firstMoves = firstStage.querySelector('[data-testid="moves"]')!;
+
+    sokoban.mount(secondStage);
+    const secondMoves = secondStage.querySelector('[data-testid="moves"]')!;
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+
+    expect(firstMoves.textContent).toBe('Moves: 0');
+    expect(secondMoves.textContent).toBe('Moves: 1');
+  });
+
+  it('unmount clears the stage and removes its key listener', () => {
+    const { stage } = setup();
+    const removeListener = vi.spyOn(window, 'removeEventListener');
+
+    sokoban.unmount();
+
+    expect(stage.childElementCount).toBe(0);
+    expect(removeListener).toHaveBeenCalledWith('keydown', expect.any(Function));
+  });
+
+  it('unmount is safe when nothing is mounted', () => {
+    sokoban.unmount();
+    expect(document.body.childElementCount).toBe(0);
   });
 
   it('shows the win banner once every box is on a target', () => {

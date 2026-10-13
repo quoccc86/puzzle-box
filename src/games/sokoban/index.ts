@@ -15,6 +15,12 @@ interface Mounted {
 
 let mounted: Mounted | null = null;
 
+function teardown(game: Mounted): void {
+  window.removeEventListener('keydown', game.onKey);
+  game.destroyCanvas();
+  game.container.replaceChildren();
+}
+
 function build(el: HTMLElement): Mounted {
   let state = initialState(START_LEVEL);
 
@@ -84,14 +90,12 @@ export const sokoban: Game = {
   id: 'sokoban',
   name: 'Sokoban',
   mount(el: HTMLElement): void {
-    mounted?.destroyCanvas();
+    if (mounted !== null) teardown(mounted);
     mounted = build(el);
   },
   unmount(): void {
     if (mounted === null) return;
-    window.removeEventListener('keydown', mounted.onKey);
-    mounted.destroyCanvas();
-    mounted.container.replaceChildren();
+    teardown(mounted);
     mounted = null;
   },
 };
