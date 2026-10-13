@@ -35,6 +35,10 @@ function build(el: HTMLElement): Mounted {
   const undoStack: typeof state[] = [];
   const redoStack: typeof state[] = [];
 
+  const campaign = document.createElement('div');
+  campaign.className = 'sokoban-campaign';
+  campaign.dataset.testid = 'campaign';
+
   const wrap = document.createElement('div');
   wrap.className = 'sokoban';
 
@@ -50,6 +54,12 @@ function build(el: HTMLElement): Mounted {
   const instructions = document.createElement('p');
   instructions.className = 'sokoban-instructions';
   instructions.textContent = 'Push every box onto a target. Arrows/WASD move; Z undo, Y redo.';
+
+  const levelHint = document.createElement('p');
+  levelHint.className = 'sokoban-level-hint';
+  levelHint.dataset.testid = 'level-hint';
+  levelHint.textContent = 'Tip: start with the middle box, then work on the outer boxes.';
+  levelHint.hidden = true;
 
   const hud = document.createElement('div');
   hud.className = 'sokoban-hud';
@@ -100,7 +110,8 @@ function build(el: HTMLElement): Mounted {
   campaignCompleteBanner.hidden = true;
   campaignCompleteBanner.textContent = 'Campaign complete!';
 
-  el.replaceChildren(levelLabel, instructions, wrap, banner, campaignCompleteBanner, replayButton);
+  campaign.append(levelLabel, instructions, levelHint, wrap, banner, campaignCompleteBanner, replayButton);
+  el.replaceChildren(campaign);
 
   function clearLevelTimer(): void {
     if (levelTimer !== null) {
@@ -115,6 +126,7 @@ function build(el: HTMLElement): Mounted {
     levelLabel.textContent = campaignComplete
       ? 'Campaign complete!'
       : `Level ${campaignIndex + 1} / ${LEVELS.length}`;
+    levelHint.hidden = campaignComplete || campaignIndex !== 3;
     banner.textContent = solvedBannerText || 'Level solved!';
     banner.hidden = !isSolved(state) || campaignComplete;
     undoButton.disabled = undoStack.length === 0;
