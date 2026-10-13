@@ -93,9 +93,11 @@ designed.
 | `+` | player on target |
 
 `parseLevel(text)` throws an `Error` with a specific message when the map
-is ragged (rows of differing length), contains no player, has more than
-one player, or has no boxes or no targets. `*` contributes both a box and
-a target; `+` contributes a player and a target.
+is ragged (rows of differing length), contains a character outside the
+format's alphabet, contains no player, has more than one player, has no
+boxes or no targets, or has a different number of boxes than targets.
+The last rule rejects a level that could never be won. `*` contributes
+both a box and a target; `+` contributes a player and a target.
 
 ## Move logic
 
